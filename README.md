@@ -8,7 +8,7 @@ New version of react use query library. Check on [npm](https://www.npmjs.com/pac
 
 Check out for changes in the CHANGELOG:
 
-[Changelog](https://github.com/alexdant91/async-storage-adapter/blob/master/CHANGELOG.md)
+[Changelog](https://github.com/alexdant91/react-use-query/blob/master/CHANGELOG.md)
 
 ## Supporting the project
 
