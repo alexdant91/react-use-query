@@ -6,6 +6,11 @@
   "main": "dist/index.js",
   "module": "dist/index.module.js",
   "unpkg": "dist/index.umd.js",
+  "private": false,
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
   "scripts": {
     "build": "microbundle",           
     "dev": "microbundle watch"        
