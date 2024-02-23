@@ -1,5 +1,5 @@
 {
-  "name": "react-use-query",
+  "name": "use-query-manager",
   "version": "1.0.0",                     
   "type": "module",
   "source": "src/index.js",            
