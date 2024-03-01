@@ -1,2 +1,254 @@
-import{createContext as e,useState as t,useContext as r,useRef as o,useEffect as n}from"react";function a(){return a=Object.assign?Object.assign.bind():function(e){for(var t=1;t<arguments.length;t++){var r=arguments[t];for(var o in r)Object.prototype.hasOwnProperty.call(r,o)&&(e[o]=r[o])}return e},a.apply(this,arguments)}var i={selector:void 0,manipulate:void 0,method:"GET",headers:void 0,body:void 0,isDebuggerActivated:!1,cacheTimeout:0},c=null,u=function(e,t,r,o){void 0===e&&(e=""),void 0===t&&(t=!1),void 0===r&&(r=!1),void 0===o&&(o=null),r?t&&console.error("[USE_QUERY]: "+e+" - "+(new Date).toLocaleTimeString(),o):t&&console.log("[USE_QUERY]: "+e+" - "+(new Date).toLocaleTimeString())},s=function(e){var t=Object.keys(i),r=Object.keys(e).filter(function(e){return!t.includes(e)});return void 0!==e.selector&&"string"!=typeof e.selector?(u("Validation error for `options.selector`",isDebuggerActivated,!0,new Error("Selector must be a string. It should contains key value to select from result object.")),!1):void 0===e.method||"string"==typeof e.method&&-1!==["GET","POST","PUT","PATCH","DELETE"].indexOf(e.method.toUpperCase())?void 0!==e.headers&&"object"!=typeof e.headers&&Array.isArray(e.headers)?(u("Validation error for `options.headers`",isDebuggerActivated,!0,new Error("Headers must be an object. It should contains request headers key value.")),!1):void 0!==e.isDebuggerActivated&&"boolean"!=typeof e.isDebuggerActivated&&Array.isArray(e.headers)?(u("Validation error for `options.isDebuggerActivated`",!0,!0,new Error("isDebuggerActivated must be a boolean. It should be activated if you need to debug all process.")),!1):void 0!==e.manipulate&&"function"!=typeof e.manipulate?(u("Validation error for `options.manipulate`",!0,!0,new Error("manipulate must be a function. It rappresent the funcion to manipulate data before saving on state.")),!1):void 0!==e.cacheTimeout&&"number"!=typeof e.cacheTimeout?(u("Validation error for `options.cacheTimeout`",!0,!0,new Error("cacheTimeout must be a number. It rappresent the timeout to remove cached data from memory in milliseconds.")),!1):!(r.length>0&&(u("Validation error",!0,!0,new Error("Found not valid option"+(r.length>1?"s":"")+': "'+r.join('", "')+'".')),1)):(u("Validation error for `options.method`",isDebuggerActivated,!0,new Error('Method must be a string. It should be one of "GET", "POST", "PUT", "PATCH", "DELETE".')),!1)},d=function(e,t){e.cacheTimeout&&e.cacheTimeout>0&&(u("Cache clear timeout start: "+e.cacheTimeout/1e3+" seconds.",e.isDebuggerActivated),clearTimeout(c),c=setTimeout(function(){t.current={},u("Cache cleared",e.isDebuggerActivated)},e.cacheTimeout))},l=e(null),f=function(e){var r=e.children,o=t(null);return h(l.Provider,{value:[o[0],o[1]]},r)},v=function(){return r(l)},m=function(e,r){void 0===r&&(r=a({},i));var c=a({},i,r),l=c.selector,f=c.manipulate,h=c.method,m=c.headers,p=c.body,g=c.isDebuggerActivated;s(a({},i,r));var b=o({}),y=v(),T=y[0],E=y[1],A=t(null),D=A[0],w=A[1],P=t(!1),j=P[0],O=P[1],S=function(){try{if(u("Fetching data...",g),D&&w(null),j||O(!0),b.current[e])return u("Get data from cache, no need a new request",g),"function"==typeof f&&u("Manipulate data before saving",g),E(b.current[e]),d(r,b),O(!1),Promise.resolve();var t=function(e,t){try{var r=e()}catch(e){return t(!0,e)}return r&&r.then?r.then(t.bind(null,!1),t.bind(null,!0)):t(!1,r)}(function(){return function(e,t){try{var r=e()}catch(e){return t(e)}return r&&r.then?r.then(void 0,t):r}(function(){return u("No data found in cache, proceed to do a new request...",g),Promise.resolve(fetch(e,{method:h,headers:m,data:p})).then(function(t){return Promise.resolve(t.json()).then(function(o){if(t.ok){var n=l?o[l]:o;"function"==typeof f&&u("Manipulate data before saving",g),E("function"==typeof f?f(n):n),u("Request done",g),b.current[e]="function"==typeof f?f(n):n,d(r,b),u('New data saved on cache for: "'+e+'"',g)}else w(o),u("An error occurred",g,!0,o)})})},function(e){w(e),u("An error occurred",g,!0,e)})},function(e,t){if(O(!1),u("Data seatled, process done",g),e)throw t;return t});return Promise.resolve(t&&t.then?t.then(function(){}):void 0)}catch(e){return Promise.reject(e)}};return n(function(){S()},[e]),{data:T,error:D,loading:j,updateData:E,refresh:S,cache:{get:function(e){return e?b.current[e]:b.current},has:function(e){return b.current[e]},clear:function(){b.current={},u("Cache cleared",g)}}}};export{f as QueryProvider,m as useQuery,v as useQueryContext};
+import { useState, useContext, useRef, useEffect, createContext } from 'react';
+import { jsx } from 'react/jsx-runtime';
+
+function _extends() {
+  _extends = Object.assign ? Object.assign.bind() : function (target) {
+    for (var i = 1; i < arguments.length; i++) {
+      var source = arguments[i];
+      for (var key in source) {
+        if (Object.prototype.hasOwnProperty.call(source, key)) {
+          target[key] = source[key];
+        }
+      }
+    }
+    return target;
+  };
+  return _extends.apply(this, arguments);
+}
+
+function _catch(body, recover) {
+  try {
+    var result = body();
+  } catch (e) {
+    return recover(e);
+  }
+  if (result && result.then) {
+    return result.then(void 0, recover);
+  }
+  return result;
+}
+var DEFAULT_OPTIONS = {
+  selector: undefined,
+  manipulate: undefined,
+  method: "GET",
+  headers: undefined,
+  body: undefined,
+  isDebuggerActivated: false,
+  cacheTimeout: 0
+};
+function _finallyRethrows(body, finalizer) {
+  try {
+    var result = body();
+  } catch (e) {
+    return finalizer(true, e);
+  }
+  if (result && result.then) {
+    return result.then(finalizer.bind(null, false), finalizer.bind(null, true));
+  }
+  return finalizer(false, result);
+}
+var cacheTimeout = null;
+
+/**
+ * @param {string} [message=""] 
+ * @param {boolean} [isDebuggerActivated=false]
+ * @param {boolean} [isError=false] 
+ * @param {null|string|Error} [error=null]
+ */
+var logDebugger = function logDebugger(message, isDebuggerActivated, isError, error) {
+  if (message === void 0) {
+    message = "";
+  }
+  if (isDebuggerActivated === void 0) {
+    isDebuggerActivated = false;
+  }
+  if (isError === void 0) {
+    isError = false;
+  }
+  if (error === void 0) {
+    error = null;
+  }
+  if (isError) {
+    if (isDebuggerActivated) console.error("[USE_QUERY]: " + message + " - " + new Date().toLocaleTimeString(), error);
+  } else {
+    if (isDebuggerActivated) console.log("[USE_QUERY]: " + message + " - " + new Date().toLocaleTimeString());
+  }
+};
+
+/**
+ * @param {DefaultUseQueryOptions} options 
+ * @returns {boolean}
+ */
+var validateOptions = function validateOptions(options) {
+  var keys = Object.keys(DEFAULT_OPTIONS);
+  var _keys = Object.keys(options);
+  var symDifference = _keys.filter(function (item) {
+    return !keys.includes(item);
+  });
+  if (options.selector !== undefined && typeof options.selector !== "string") {
+    logDebugger("Validation error for `options.selector`", isDebuggerActivated, true, new Error("Selector must be a string. It should contains key value to select from result object."));
+    return false;
+  } else if (options.method !== undefined && (typeof options.method !== "string" || ["GET", "POST", "PUT", "PATCH", "DELETE"].indexOf(options.method.toUpperCase()) === -1)) {
+    logDebugger("Validation error for `options.method`", isDebuggerActivated, true, new Error('Method must be a string. It should be one of "GET", "POST", "PUT", "PATCH", "DELETE".'));
+    return false;
+  } else if (options.headers !== undefined && typeof options.headers !== "object" && Array.isArray(options.headers)) {
+    logDebugger("Validation error for `options.headers`", isDebuggerActivated, true, new Error("Headers must be an object. It should contains request headers key value."));
+    return false;
+  } else if (options.isDebuggerActivated !== undefined && typeof options.isDebuggerActivated !== "boolean" && Array.isArray(options.headers)) {
+    logDebugger("Validation error for `options.isDebuggerActivated`", true, true, new Error("isDebuggerActivated must be a boolean. It should be activated if you need to debug all process."));
+    return false;
+  } else if (options.manipulate !== undefined && typeof options.manipulate !== "function") {
+    logDebugger("Validation error for `options.manipulate`", true, true, new Error("manipulate must be a function. It rappresent the funcion to manipulate data before saving on state."));
+    return false;
+  } else if (options.cacheTimeout !== undefined && typeof options.cacheTimeout !== "number") {
+    logDebugger("Validation error for `options.cacheTimeout`", true, true, new Error("cacheTimeout must be a number. It rappresent the timeout to remove cached data from memory in milliseconds."));
+    return false;
+  }
+  if (symDifference.length > 0) {
+    logDebugger("Validation error", true, true, new Error("Found not valid option" + (symDifference.length > 1 ? "s" : "") + ": \"" + symDifference.join('", "') + "\"."));
+    return false;
+  }
+  return true;
+};
+
+/**
+ * @param {DefaultUseQueryOptions} options 
+ * @param {MutableRefObject} cache 
+ */
+var timeoutCacheClear = function timeoutCacheClear(options, cache) {
+  if (options.cacheTimeout && options.cacheTimeout > 0) {
+    logDebugger("Cache clear timeout start: " + options.cacheTimeout / 1000 + " seconds.", options.isDebuggerActivated);
+    clearTimeout(cacheTimeout);
+    cacheTimeout = setTimeout(function () {
+      cache.current = {};
+      logDebugger("Cache cleared", options.isDebuggerActivated);
+    }, options.cacheTimeout);
+  }
+};
+var QueryContext = /*#__PURE__*/createContext(null);
+var QueryProvider = function QueryProvider(_ref) {
+  var children = _ref.children;
+  var _useState = useState(null),
+    state = _useState[0],
+    setState = _useState[1];
+  return /*#__PURE__*/jsx(QueryContext.Provider, {
+    value: [state, setState],
+    children: children
+  });
+};
+var useQueryContext = function useQueryContext() {
+  return useContext(QueryContext);
+};
+
+/**
+ * Use query hook that manage requests, cache and other features.
+ * @param {string} url 
+ * @param {object} options
+ * @param {string} [options.selector] Selector must be a string. It should contains key value to select from result object.
+ * @param {function} [options.manipulate] manipulate must be a function. It rappresent the funcion to manipulate data before saving on state. If you need to mutate data, use `mutate` function instead
+ * @param {string} [options.method] Method must be a string. It should be one of "GET", "POST", "PUT", "PATCH", "DELETE".
+ * @param {object} [options.headers] Headers must be an object. It should contains request headers key value.
+ * @param {*} [options.body]
+ * @param {boolean} [options.isDebuggerActivated] isDebuggerActivated must be a boolean. It should be activated if you need to debug all process.
+ * @param {number} [options.cacheTimeout] cacheTimeout must be a number. It rappresent the timeout to remove cached data from memory in milliseconds.
+ * @returns {QueryResult}
+ */
+var useQuery = function useQuery(url, options) {
+  if (options === void 0) {
+    options = _extends({}, DEFAULT_OPTIONS);
+  }
+  var _DEFAULT_OPTIONS$opti = _extends({}, DEFAULT_OPTIONS, options),
+    selector = _DEFAULT_OPTIONS$opti.selector,
+    manipulate = _DEFAULT_OPTIONS$opti.manipulate,
+    method = _DEFAULT_OPTIONS$opti.method,
+    headers = _DEFAULT_OPTIONS$opti.headers,
+    body = _DEFAULT_OPTIONS$opti.body,
+    isDebuggerActivated = _DEFAULT_OPTIONS$opti.isDebuggerActivated;
+  validateOptions(_extends({}, DEFAULT_OPTIONS, options));
+  var cache = useRef({});
+  var _useQueryContext = useQueryContext(),
+    data = _useQueryContext[0],
+    setData = _useQueryContext[1];
+  var _useState2 = useState(null),
+    error = _useState2[0],
+    setError = _useState2[1];
+  var _useState3 = useState(false),
+    loading = _useState3[0],
+    setLoading = _useState3[1];
+  var fetchData = function fetchData() {
+    try {
+      logDebugger("Fetching data...", isDebuggerActivated);
+      if (error) setError(null);
+      if (!loading) setLoading(true);
+      if (cache.current[url]) {
+        logDebugger("Get data from cache, no need a new request", isDebuggerActivated);
+        if (typeof manipulate === "function") logDebugger("Manipulate data before saving", isDebuggerActivated);
+        setData(cache.current[url]);
+        timeoutCacheClear(options, cache);
+        setLoading(false);
+        return Promise.resolve();
+      }
+      var _temp = _finallyRethrows(function () {
+        return _catch(function () {
+          logDebugger("No data found in cache, proceed to do a new request...", isDebuggerActivated);
+          return Promise.resolve(fetch(url, {
+            method: method,
+            headers: headers,
+            data: body
+          })).then(function (response) {
+            return Promise.resolve(response.json()).then(function (result) {
+              if (response.ok) {
+                var _result = selector ? result[selector] : result;
+                if (typeof manipulate === "function") logDebugger("Manipulate data before saving", isDebuggerActivated);
+                setData(typeof manipulate === "function" ? manipulate(_result) : _result);
+                logDebugger("Request done", isDebuggerActivated);
+                cache.current[url] = typeof manipulate === "function" ? manipulate(_result) : _result;
+                timeoutCacheClear(options, cache);
+                logDebugger("New data saved on cache for: \"" + url + "\"", isDebuggerActivated);
+              } else {
+                setError(result);
+                logDebugger("An error occurred", isDebuggerActivated, true, result);
+              }
+            });
+          });
+        }, function (err) {
+          setError(err);
+          logDebugger("An error occurred", isDebuggerActivated, true, err);
+        });
+      }, function (_wasThrown, _result2) {
+        setLoading(false);
+        logDebugger("Data seatled, process done", isDebuggerActivated);
+        if (_wasThrown) throw _result2;
+        return _result2;
+      });
+      return Promise.resolve(_temp && _temp.then ? _temp.then(function () {}) : void 0);
+    } catch (e) {
+      return Promise.reject(e);
+    }
+  };
+  useEffect(function () {
+    fetchData();
+  }, [url]);
+  return {
+    data: data,
+    error: error,
+    loading: loading,
+    updateData: setData,
+    refresh: fetchData,
+    cache: {
+      get: function get(url) {
+        return url ? cache.current[url] : cache.current;
+      },
+      has: function has(url) {
+        return cache.current[url];
+      },
+      clear: function clear() {
+        cache.current = {};
+        logDebugger("Cache cleared", isDebuggerActivated);
+      }
+    }
+  };
+};
+
+export { QueryProvider, useQuery, useQueryContext };
 //# sourceMappingURL=index.module.js.map
