@@ -1,6 +1,6 @@
 {
   "name": "@aredant/use-query-manager",
-  "version": "1.0.4",                     
+  "version": "1.0.5",                     
   "type": "module",
   "source": "src/index.js",            
   "main": "dist/index.js",
@@ -19,23 +19,6 @@
     "react": "^18.2.0"
   },
   "homepage": "https://github.com/alexdant91/react-use-query#readme",
-  "dependencies": {
-    "@emotion/react": "^11.10.6",
-    "@emotion/styled": "^11.10.6",
-    "eslint": "^8.39.0",
-    "eslint-config-prettier": "^8.8.0",
-    "eslint-plugin-import": "^2.27.5",
-    "eslint-plugin-node": "^11.1.0",
-    "eslint-plugin-prettier": "^4.2.1",
-    "eslint-plugin-promise": "^6.1.1",
-    "eslint-plugin-react": "^7.32.2",
-    "microbundle": "^0.15.1",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "react-scripts": "^5.0.1",
-    "tailwindcss": "^3.3.2",
-    "twin.macro": "^3.3.1"
-  },
   "devDependencies": {
     "microbundle": "^0.15.1"
   },
