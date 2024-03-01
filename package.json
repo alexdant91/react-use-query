@@ -1,6 +1,6 @@
 {
   "name": "@aredant/use-query-manager",
-  "version": "1.0.2",                     
+  "version": "1.0.3",                     
   "main": "dist/index.js",
   "module": "dist/index.modern.js",
   "source": "src/index.js",
@@ -8,7 +8,7 @@
     "build": "microbundle --jsx React.createElement --jsxFragment React.Fragment --no-compress",
     "dev": "microbundle watch"
   },
-  "author": "aledantprojects@gmail.com",
+  "author": "alexdant91@gmail.com",
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/alexdant91/react-use-query/issues"
