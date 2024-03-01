@@ -42,18 +42,7 @@ function _extends() {
  * @property {number} [cacheTimeout=0] 
  */
 
-function _catch(body, recover) {
-  try {
-    var result = body();
-  } catch (e) {
-    return recover(e);
-  }
-  if (result && result.then) {
-    return result.then(void 0, recover);
-  }
-  return result;
-}
-var DEFAULT_OPTIONS = {
+const DEFAULT_OPTIONS = {
   selector: undefined,
   manipulate: undefined,
   method: "GET",
@@ -62,18 +51,7 @@ var DEFAULT_OPTIONS = {
   isDebuggerActivated: false,
   cacheTimeout: 0
 };
-function _finallyRethrows(body, finalizer) {
-  try {
-    var result = body();
-  } catch (e) {
-    return finalizer(true, e);
-  }
-  if (result && result.then) {
-    return result.then(finalizer.bind(null, false), finalizer.bind(null, true));
-  }
-  return finalizer(false, result);
-}
-var cacheTimeout = null;
+let cacheTimeout = null;
 
 /**
  * @param {string} [message=""] 
@@ -81,23 +59,11 @@ var cacheTimeout = null;
  * @param {boolean} [isError=false] 
  * @param {null|string|Error} [error=null]
  */
-var logDebugger = function logDebugger(message, isDebuggerActivated, isError, error) {
-  if (message === void 0) {
-    message = "";
-  }
-  if (isDebuggerActivated === void 0) {
-    isDebuggerActivated = false;
-  }
-  if (isError === void 0) {
-    isError = false;
-  }
-  if (error === void 0) {
-    error = null;
-  }
+const logDebugger = (message = "", isDebuggerActivated = false, isError = false, error = null) => {
   if (isError) {
-    if (isDebuggerActivated) console.error("[USE_QUERY]: " + message + " - " + new Date().toLocaleTimeString(), error);
+    if (isDebuggerActivated) console.error(`[USE_QUERY]: ${message} - ${new Date().toLocaleTimeString()}`, error);
   } else {
-    if (isDebuggerActivated) console.log("[USE_QUERY]: " + message + " - " + new Date().toLocaleTimeString());
+    if (isDebuggerActivated) console.log(`[USE_QUERY]: ${message} - ${new Date().toLocaleTimeString()}`);
   }
 };
 
@@ -105,12 +71,10 @@ var logDebugger = function logDebugger(message, isDebuggerActivated, isError, er
  * @param {DefaultUseQueryOptions} options 
  * @returns {boolean}
  */
-var validateOptions = function validateOptions(options) {
-  var keys = Object.keys(DEFAULT_OPTIONS);
-  var _keys = Object.keys(options);
-  var symDifference = _keys.filter(function (item) {
-    return !keys.includes(item);
-  });
+const validateOptions = options => {
+  const keys = Object.keys(DEFAULT_OPTIONS);
+  const _keys = Object.keys(options);
+  const symDifference = _keys.filter(item => !keys.includes(item));
   if (options.selector !== undefined && typeof options.selector !== "string") {
     logDebugger("Validation error for `options.selector`", isDebuggerActivated, true, new Error("Selector must be a string. It should contains key value to select from result object."));
     return false;
@@ -131,7 +95,7 @@ var validateOptions = function validateOptions(options) {
     return false;
   }
   if (symDifference.length > 0) {
-    logDebugger("Validation error", true, true, new Error("Found not valid option" + (symDifference.length > 1 ? "s" : "") + ": \"" + symDifference.join('", "') + "\"."));
+    logDebugger("Validation error", true, true, new Error(`Found not valid option${symDifference.length > 1 ? "s" : ""}: "${symDifference.join('", "')}".`));
     return false;
   }
   return true;
@@ -141,29 +105,26 @@ var validateOptions = function validateOptions(options) {
  * @param {DefaultUseQueryOptions} options 
  * @param {MutableRefObject} cache 
  */
-var timeoutCacheClear = function timeoutCacheClear(options, cache) {
+const timeoutCacheClear = (options, cache) => {
   if (options.cacheTimeout && options.cacheTimeout > 0) {
-    logDebugger("Cache clear timeout start: " + options.cacheTimeout / 1000 + " seconds.", options.isDebuggerActivated);
+    logDebugger(`Cache clear timeout start: ${options.cacheTimeout / 1000} seconds.`, options.isDebuggerActivated);
     clearTimeout(cacheTimeout);
-    cacheTimeout = setTimeout(function () {
+    cacheTimeout = setTimeout(() => {
       cache.current = {};
-      logDebugger("Cache cleared", options.isDebuggerActivated);
+      logDebugger(`Cache cleared`, options.isDebuggerActivated);
     }, options.cacheTimeout);
   }
 };
-var QueryContext = createContext(null);
-var QueryProvider = function QueryProvider(_ref) {
-  var children = _ref.children;
-  var _useState = useState(null),
-    state = _useState[0],
-    setState = _useState[1];
-  return /*#__PURE__*/React.createElement(QueryContext.Provider, {
+const QueryContext = createContext(null);
+const QueryProvider = ({
+  children
+}) => {
+  const [state, setState] = useState(null);
+  return h(QueryContext.Provider, {
     value: [state, setState]
   }, children);
 };
-var useQueryContext = function useQueryContext() {
-  return useContext(QueryContext);
-};
+const useQueryContext = () => useContext(QueryContext);
 
 /**
  * Use query hook that manage requests, cache and other features.
@@ -178,98 +139,79 @@ var useQueryContext = function useQueryContext() {
  * @param {number} [options.cacheTimeout] cacheTimeout must be a number. It rappresent the timeout to remove cached data from memory in milliseconds.
  * @returns {QueryResult}
  */
-var useQuery = function useQuery(url, options) {
-  if (options === void 0) {
-    options = _extends({}, DEFAULT_OPTIONS);
-  }
-  var _DEFAULT_OPTIONS$opti = _extends({}, DEFAULT_OPTIONS, options),
-    selector = _DEFAULT_OPTIONS$opti.selector,
-    manipulate = _DEFAULT_OPTIONS$opti.manipulate,
-    method = _DEFAULT_OPTIONS$opti.method,
-    headers = _DEFAULT_OPTIONS$opti.headers,
-    body = _DEFAULT_OPTIONS$opti.body,
-    isDebuggerActivated = _DEFAULT_OPTIONS$opti.isDebuggerActivated;
+const useQuery = (url, options = _extends({}, DEFAULT_OPTIONS)) => {
+  const {
+    selector,
+    manipulate,
+    method,
+    headers,
+    body,
+    isDebuggerActivated
+  } = _extends({}, DEFAULT_OPTIONS, options);
   validateOptions(_extends({}, DEFAULT_OPTIONS, options));
-  var cache = useRef({});
-  var _useQueryContext = useQueryContext(),
-    data = _useQueryContext[0],
-    setData = _useQueryContext[1];
-  var _useState2 = useState(null),
-    error = _useState2[0],
-    setError = _useState2[1];
-  var _useState3 = useState(false),
-    loading = _useState3[0],
-    setLoading = _useState3[1];
-  var fetchData = function fetchData() {
+  const cache = useRef({});
+  const [data, setData] = useQueryContext();
+  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const fetchData = async () => {
+    logDebugger("Fetching data...", isDebuggerActivated);
+    if (error) setError(null);
+    if (!loading) setLoading(true);
+    if (cache.current[url]) {
+      logDebugger("Get data from cache, no need a new request", isDebuggerActivated);
+      if (typeof manipulate === "function") logDebugger("Manipulate data before saving", isDebuggerActivated);
+      setData(cache.current[url]);
+      timeoutCacheClear(options, cache);
+      setLoading(false);
+      return;
+    }
     try {
-      logDebugger("Fetching data...", isDebuggerActivated);
-      if (error) setError(null);
-      if (!loading) setLoading(true);
-      if (cache.current[url]) {
-        logDebugger("Get data from cache, no need a new request", isDebuggerActivated);
-        if (typeof manipulate === "function") logDebugger("Manipulate data before saving", isDebuggerActivated);
-        setData(cache.current[url]);
-        timeoutCacheClear(options, cache);
-        setLoading(false);
-        return Promise.resolve();
-      }
-      var _temp = _finallyRethrows(function () {
-        return _catch(function () {
-          logDebugger("No data found in cache, proceed to do a new request...", isDebuggerActivated);
-          return Promise.resolve(fetch(url, {
-            method: method,
-            headers: headers,
-            data: body
-          })).then(function (response) {
-            return Promise.resolve(response.json()).then(function (result) {
-              if (response.ok) {
-                var _result = selector ? result[selector] : result;
-                if (typeof manipulate === "function") logDebugger("Manipulate data before saving", isDebuggerActivated);
-                setData(typeof manipulate === "function" ? manipulate(_result) : _result);
-                logDebugger("Request done", isDebuggerActivated);
-                cache.current[url] = typeof manipulate === "function" ? manipulate(_result) : _result;
-                timeoutCacheClear(options, cache);
-                logDebugger("New data saved on cache for: \"" + url + "\"", isDebuggerActivated);
-              } else {
-                setError(result);
-                logDebugger("An error occurred", isDebuggerActivated, true, result);
-              }
-            });
-          });
-        }, function (err) {
-          setError(err);
-          logDebugger("An error occurred", isDebuggerActivated, true, err);
-        });
-      }, function (_wasThrown, _result2) {
-        setLoading(false);
-        logDebugger("Data seatled, process done", isDebuggerActivated);
-        if (_wasThrown) throw _result2;
-        return _result2;
+      logDebugger("No data found in cache, proceed to do a new request...", isDebuggerActivated);
+      const response = await fetch(url, {
+        method,
+        headers,
+        data: body
       });
-      return Promise.resolve(_temp && _temp.then ? _temp.then(function () {}) : void 0);
-    } catch (e) {
-      return Promise.reject(e);
+      const result = await response.json();
+      if (response.ok) {
+        const _result = selector ? result[selector] : result;
+        if (typeof manipulate === "function") logDebugger("Manipulate data before saving", isDebuggerActivated);
+        setData(typeof manipulate === "function" ? manipulate(_result) : _result);
+        logDebugger("Request done", isDebuggerActivated);
+        cache.current[url] = typeof manipulate === "function" ? manipulate(_result) : _result;
+        timeoutCacheClear(options, cache);
+        logDebugger(`New data saved on cache for: "${url}"`, isDebuggerActivated);
+      } else {
+        setError(result);
+        logDebugger("An error occurred", isDebuggerActivated, true, result);
+      }
+    } catch (err) {
+      setError(err);
+      logDebugger("An error occurred", isDebuggerActivated, true, err);
+    } finally {
+      setLoading(false);
+      logDebugger("Data seatled, process done", isDebuggerActivated);
     }
   };
-  useEffect(function () {
+  useEffect(() => {
     fetchData();
   }, [url]);
   return {
-    data: data,
-    error: error,
-    loading: loading,
+    data,
+    error,
+    loading,
     updateData: setData,
     refresh: fetchData,
     cache: {
-      get: function get(url) {
+      get: url => {
         return url ? cache.current[url] : cache.current;
       },
-      has: function has(url) {
+      has: url => {
         return cache.current[url];
       },
-      clear: function clear() {
+      clear: () => {
         cache.current = {};
-        logDebugger("Cache cleared", isDebuggerActivated);
+        logDebugger(`Cache cleared`, isDebuggerActivated);
       }
     }
   };

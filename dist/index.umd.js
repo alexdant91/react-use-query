@@ -160,7 +160,7 @@
     var _useState = react.useState(null),
       state = _useState[0],
       setState = _useState[1];
-    return /*#__PURE__*/React.createElement(QueryContext.Provider, {
+    return h(QueryContext.Provider, {
       value: [state, setState]
     }, children);
   };

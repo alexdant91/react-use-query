@@ -1,11 +1,13 @@
 {
   "name": "@aredant/use-query-manager",
-  "version": "1.0.3",                     
+  "version": "1.0.4",                     
+  "type": "module",
+  "source": "src/index.js",            
   "main": "dist/index.js",
-  "module": "dist/index.modern.js",
-  "source": "src/index.js",
+  "module": "dist/index.js",
+  "unpkg": "dist/index.umd.js",
   "scripts": {
-    "build": "microbundle --jsx React.createElement --jsxFragment React.Fragment --no-compress",
+    "build": "microbundle --no-compress",
     "dev": "microbundle watch"
   },
   "author": "alexdant91@gmail.com",
