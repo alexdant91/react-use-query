@@ -1,4 +1,4 @@
-import { createContext, useState, useContext, useRef, useEffect } from 'react';
+var react = require('react');
 
 function _extends() {
   _extends = Object.assign ? Object.assign.bind() : function (target) {
@@ -151,10 +151,10 @@ var timeoutCacheClear = function timeoutCacheClear(options, cache) {
     }, options.cacheTimeout);
   }
 };
-var QueryContext = createContext(null);
+var QueryContext = react.createContext(null);
 var QueryProvider = function QueryProvider(_ref) {
   var children = _ref.children;
-  var _useState = useState(null),
+  var _useState = react.useState(null),
     state = _useState[0],
     setState = _useState[1];
   return /*#__PURE__*/React.createElement(QueryContext.Provider, {
@@ -162,7 +162,7 @@ var QueryProvider = function QueryProvider(_ref) {
   }, children);
 };
 var useQueryContext = function useQueryContext() {
-  return useContext(QueryContext);
+  return react.useContext(QueryContext);
 };
 
 /**
@@ -190,14 +190,14 @@ var useQuery = function useQuery(url, options) {
     body = _DEFAULT_OPTIONS$opti.body,
     isDebuggerActivated = _DEFAULT_OPTIONS$opti.isDebuggerActivated;
   validateOptions(_extends({}, DEFAULT_OPTIONS, options));
-  var cache = useRef({});
+  var cache = react.useRef({});
   var _useQueryContext = useQueryContext(),
     data = _useQueryContext[0],
     setData = _useQueryContext[1];
-  var _useState2 = useState(null),
+  var _useState2 = react.useState(null),
     error = _useState2[0],
     setError = _useState2[1];
-  var _useState3 = useState(false),
+  var _useState3 = react.useState(false),
     loading = _useState3[0],
     setLoading = _useState3[1];
   var fetchData = function fetchData() {
@@ -251,7 +251,7 @@ var useQuery = function useQuery(url, options) {
       return Promise.reject(e);
     }
   };
-  useEffect(function () {
+  react.useEffect(function () {
     fetchData();
   }, [url]);
   return {
@@ -275,5 +275,7 @@ var useQuery = function useQuery(url, options) {
   };
 };
 
-export { QueryProvider, useQuery, useQueryContext };
-//# sourceMappingURL=index.modern.js.map
+exports.QueryProvider = QueryProvider;
+exports.useQuery = useQuery;
+exports.useQueryContext = useQueryContext;
+//# sourceMappingURL=index.js.map

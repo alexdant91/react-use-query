@@ -1,19 +1,38 @@
 {
   "name": "@aredant/use-query-manager",
-  "version": "1.0.1",                     
-  "type": "module",
-  "source": "src/index.js",            
+  "version": "1.0.2",                     
   "main": "dist/index.js",
-  "module": "dist/index.module.js",
-  "unpkg": "dist/index.umd.js",
-  "private": false,
-  "publishConfig": {
-    "access": "public",
-    "registry": "https://registry.npmjs.org/"
-  },
+  "module": "dist/index.modern.js",
+  "source": "src/index.js",
   "scripts": {
-    "build": "microbundle",           
-    "dev": "microbundle watch"        
+    "build": "microbundle --jsx React.createElement --jsxFragment React.Fragment --no-compress",
+    "dev": "microbundle watch"
+  },
+  "author": "aledantprojects@gmail.com",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/alexdant91/react-use-query/issues"
+  },
+  "peerDependencies": {
+    "react": "^18.2.0"
+  },
+  "homepage": "https://github.com/alexdant91/react-use-query#readme",
+  "dependencies": {
+    "@emotion/react": "^11.10.6",
+    "@emotion/styled": "^11.10.6",
+    "eslint": "^8.39.0",
+    "eslint-config-prettier": "^8.8.0",
+    "eslint-plugin-import": "^2.27.5",
+    "eslint-plugin-node": "^11.1.0",
+    "eslint-plugin-prettier": "^4.2.1",
+    "eslint-plugin-promise": "^6.1.1",
+    "eslint-plugin-react": "^7.32.2",
+    "microbundle": "^0.15.1",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-scripts": "^5.0.1",
+    "tailwindcss": "^3.3.2",
+    "twin.macro": "^3.3.1"
   },
   "devDependencies": {
     "microbundle": "^0.15.1"
