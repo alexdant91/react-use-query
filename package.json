@@ -1,13 +1,17 @@
 {
   "name": "@aredant/use-query-manager",
-  "version": "1.0.5",                     
+  "version": "1.0.6",                     
   "type": "module",
-  "source": "src/index.js",            
-  "main": "dist/index.js",
-  "module": "dist/index.js",
-  "unpkg": "dist/index.umd.js",
+  "source": "src/index.js",
+  "exports": {
+    "require": "./dist/index.cjs",
+    "default": "./dist/index.modern.js"
+  },
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.module.js",
+  "unpkg": "./dist/index.umd.js",
   "scripts": {
-    "build": "microbundle --no-compress",
+    "build": "microbundle",
     "dev": "microbundle watch"
   },
   "author": "alexdant91@gmail.com",
