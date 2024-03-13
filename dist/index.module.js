@@ -152,7 +152,7 @@ var useQueryContext = function useQueryContext(name) {
     data = _useContext[0],
     setData = _useContext[1];
   if (name) {
-    return [data[name], function (value) {
+    return [data ? data[name] : data, function (value) {
       return setData(function (prev) {
         var _extends2;
         return _extends({}, prev, (_extends2 = {}, _extends2[name] = value, _extends2));

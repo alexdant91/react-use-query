@@ -110,7 +110,7 @@ const QueryProvider = ({
 const useQueryContext = (name = undefined) => {
   const [data, setData] = useContext(QueryContext);
   if (name) {
-    return [data[name], value => setData(prev => _extends({}, prev, {
+    return [data ? data[name] : data, value => setData(prev => _extends({}, prev, {
       [name]: value
     }))];
   } else {
