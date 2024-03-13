@@ -1,14 +1,32 @@
-import { useEffect } from 'react'
 import { useQuery, useQueryContext } from './hooks'
+
+import "./App.css"
 
 const InnerDiv = () => {
   const [data, setDate] = useQueryContext();
   const [products, setProducts] = useQueryContext("products");
 
   return (
-    <pre>
-        {products && JSON.stringify(products, null, 2)}
-    </pre>
+    <>
+      <div className="container">
+        <pre>
+            // ====================== <br />
+            // -------- DATA -------- <br />
+            // ======================
+            <br />
+            <br />
+            {data && JSON.stringify(data, null, 2)}
+        </pre>
+        <pre>
+            // ========================== <br />
+            // -------- PRODUCTS -------- <br />
+            // ==========================
+            <br />
+            <br />
+            {products && JSON.stringify(products, null, 2)}
+        </pre>
+      </div>
+    </>
   )
 }
 
