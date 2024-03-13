@@ -17,194 +17,159 @@ Maintaining a project takes time. To help allocate time, you can Buy Me a Coffee
 <a href="https://www.buymeacoffee.com/alexdant91" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" style="height: 60px !important;width: 217px !important;" ></a>
 <!-- [![Buy Me A Coffee](https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png)](https://www.buymeacoffee.com/alexdant91){:target="_blank"} -->
 
+## What is React Use Query?
+
+Package to manage all types of queries, with cache control system and granular access to context state. It can be used to optimize all request process. It is fast and don't make useless request thanks to cache control sustem. It can also give  you access to context state everywhere in your app thanks to `useQueryContext(name)` hook.
+
 ## Contents
 
-Cooming soon full documentation.
-
-<!--
-1. [Install](#how-to-install);
+1. [Install](#install);
 2. [Get Started](#get-started);
-3. [Functions](#functions);
-4. [Examples](#examples);
+3. [Options](#options);
+4. [Returns](#returns);
+5. [Usage Example](#usage-example);
 
 ## Install
 
 Inside your project run on terminal:
 
 ```cmd
-npm install async-storage-adapter --save
+npm i @aredant/use-query-manager
 ```
 
 or
 
 ```cmd
-yarn add async-storage-adapter
+yarn add @aredant/use-query-manager
 ```
 
-Then link the package on React Native 0.60+:
-
-```cmd
-npx pod-install
-```
-
-Instead on React Native <= 0.59:
-
-```cmd
-react-native link @react-native-async-storage/async-storage
-```
-
-The only one dependency that will be installed is `@react-native-async-storage/async-storage`.
+The only one dependency that will be installed is `@aredant/use-query-manager`.
 
 ## Get Started
 
-Import the package on your project file. First of all you need to declare a global key name to store your data.
+Import the package on your main file and wrap project inside `QueryProvider`.
 
 ```js
-/**
- * Class constructor accept one single required parameter, the `GlobalKeyName`.
- */
+import React from 'react'
+import ReactDOM from 'react-dom/client'
+import App from './App.jsx'
 
-// CommonJS Module
-const AsyncStorageAdapter = require("async-storage-adapter");
+import { QueryProvider } from "@aredant/use-query-manager"
 
-const { getData } = new AsyncStorageAdapter("@MyAppName");
+import './index.css'
 
-// ES6 Module
-import AsyncStorageAdapter from "async-storage-adapter";
-
-const { getData } = new AsyncStorageAdapter("@MyAppName");
+ReactDOM.createRoot(document.getElementById('root')).render(
+  <QueryProvider>
+    <App />
+  </QueryProvider>,
+)
 ```
 
-## Functions
+## Options
 
-Following the list of all avaiable functions. All functions return a `<Promise>` so need to be called inside `async/await` block:
+Following the list of all avaiable options:
 
-| Name               | Parameters                     | Description                                                                     |       Return       |
-|--------------------|:-------------------------------|:--------------------------------------------------------------------------------|:------------------:|
-| clearAll           | --                             | Clear all data from async storage.                                              | `success<Boolean>` |
-| getAllData         | --                             | Get all data from async storage.                                                |   `data<Object>`   |
-| getAllKeys         | --                             | Get array of all keys from async storage.                                       |   `keys<Array>`    |
-| getData            | `key<String>`                  | Get single key data from async storage.                                         |    `data<Any>`     |
-| getMultipleData    | `key<Array<String>>`           | Get multiple keys data from async storage.                                      |   `data<Object>`   |
-| removeData         | `key<String>`                  | Remove single key data from async storage.                                      | `success<Boolean>` |
-| removeMultipleData | `key<Array<String>>`           | Remove multiple keys data from async storage.                                   | `success<Boolean>` |
-| storeData          | `key<String>`, `value<Object>` | Store single `{ key: value }` object.                                           | `success<Boolean>` |
-| storeMultipleData  | `datas<Object<Any>>`           | Take an object with multiple `{ key: value }` pairing to save in async storage. | `success<Boolean>` |
+| Name                | Type                           | Description                                                                  |
+|---------------------|:-------------------------------|:-----------------------------------------------------------------------------|
+| name                | `String`                       | It should contains name string for context state granular control.           |
+| selector            | `String`                       | It should contains key value to select from result object.                   |
+| pick                | `Function` or `Array<String>`  | It rappresent the function or the array to pick just a portion of data.      |
+| transform           | `Function`                     | It rappresent the funcion to transform data before saving on state.          |
+| method              | `String`                       | It should be one of "GET", "POST", "PUT", "PATCH", "DELETE".                 |
+| headers             | `Object`                       | Headers must be an object. It should contains request headers key value.     |
+| body                | `Any`                          | Request body data                                                            |
+| isDebuggerActivated | `Boolean`                      | It should be activated if you need to debug all process.                     |
+| cacheTimeout        | `Number`                       | It rappresent the timeout to remove cached data from memory in milliseconds. |
 
-## Examples Usage
+## Returns
 
-Following an example with all functions using `ES6 Module` syntax:
+`useQuery` hook return an object with following keys:
+
+| Name      | Type                           | Description                                                                              |
+|-----------|:-------------------------------|:-----------------------------------------------------------------------------------------|
+| data      | `Any`                          | Data returned from request                                                               |
+| error     | `Function` or `Array<String>`  | Request error.                                                                           |
+| loading   | `Function`                     | Request loading state.                                                                   |
+| mutate    | `String`                       | Mutate function to manipulate `data` state, available everywhere inside `QueryProvider`. |
+| refresh   | `Object`                       | Data refresh function.                                                                   |
+| cache     | `Object`                       | Cache control function: `get(url<String>)`, `has(url<String>)`, `clear()`                |
+
+## Usage Example
+
+Following usage example:
+
+main.jsx
 
 ```js
-import AsyncStorageAdapter from "async-storage-adapter";
+import React from 'react'
+import ReactDOM from 'react-dom/client'
+import App from './App.jsx'
 
-// Declare functions from `AsyncStorageAdapter`;
-// Using `@MyAppName` as GlobalKeyName parameter.
-const {
-  clearAll,
-  getAllData,
-  getAllKeys,
-  getData,
-  getMultipleData,
-  removeData,
-  removeMultipleData,
-  storeData,
-  storeMultipleData
-} = new AsyncStorageAdapter("@MyAppName");
+import { QueryProvider } from "@aredant/use-query-manager"
 
-/**
- * !IMPORTANT All functions return a `<Promise>` so need to be called inside `async/await` block
- */
-
-// Clear all data in AsyncStorage
-(async () => {
-  try {
-    // No need to pass parameters
-    const isClear = await clearAll(); // Return Boolean value
-  } catch (err) {
-    throw err;
-  }
-})();
-
-// Retrieve all data in AsyncStorage
-(async () => {
-  try {
-    // No need to pass parameters
-    const keys = await getAllData(); // Object with all data stored
-  } catch (err) {
-    throw err;
-  }
-})();
-
-// Retrieve all keys in AsyncStorage
-(async () => {
-  try {
-    // No need to pass parameters
-    const datas = await getAllKeys(); // Array with all keys stored
-  } catch (err) {
-    throw err;
-  }
-})();
-
-// Retrieve single key data in AsyncStorage
-(async () => {
-  try {
-    // Pass `key` name as string
-    const data = await getData("MY_KEY_NAME"); // Any data stored with specified key
-  } catch (err) {
-    throw err;
-  }
-})();
-
-// Retrieve multiple keys data in AsyncStorage
-(async () => {
-  try {
-    // Pass `keys` array with names as strings
-    const datas = await getMultipleData(["MY_KEY_NAME_1", "MY_KEY_NAME_2", "..."]); // Any data stored with specified keys
-  } catch (err) {
-    throw err;
-  }
-})();
-
-// Delete single key data in AsyncStorage
-(async () => {
-  try {
-    // Pass `key` name as string
-    const isDeleted = await removeData("MY_KEY_NAME"); // Return Boolean value
-  } catch (err) {
-    throw err;
-  }
-})();
-
-// Delete multiple keys data in AsyncStorage
-(async () => {
-  try {
-    // Pass `keys` array with names as strings
-    const isDeleted = await removeMultipleData(["MY_KEY_NAME_1", "MY_KEY_NAME_2", "..."]); // Return Boolean value
-  } catch (err) {
-    throw err;
-  }
-})();
-
-// Store single key data in AsyncStorage
-(async () => {
-  try {
-    // Pass `key` name as string
-    // Pass `value` as `<Any>` type, e.g. an `<Object>` like `{ key: value }`
-    const isStored = await storeData("MY_KEY_NAME", { key: value }); // Return Boolean value
-  } catch (err) {
-    throw err;
-  }
-})();
-
-// Store multiple keys data in AsyncStorage
-(async () => {
-  try {
-    // Pass `object` value like `{ key: value }`. `key` will be the saved `key` name and `value` the saved `value`
-    const isStored = await storeMultipleData({ key: value }); // Return Boolean value
-  } catch (err) {
-    throw err;
-  }
-})();
+ReactDOM.createRoot(document.getElementById('root')).render(
+  <QueryProvider>
+    <App />
+  </QueryProvider>,
+)
 ```
--->
+
+App.jsx
+
+```js
+import { useEffect } from 'react'
+import { useQuery } from '@aredant/use-query-manager'
+
+import InnerComponent from './InnerComponent'
+
+const App = () => {
+  const { data, error, loading, mutate, refresh, cache } = useQuery("https://dummyjson.com/products", {
+    name: "products", // State name to select right context
+    selector: "products", // Selector for first level request data
+    method: "GET", // Request method
+    headers: {}, // Request headers
+    body: undefined, // Request body
+    transform: (data) => { // Transform response data
+      return data.filter((item) => item.id % 2 === 0);
+    },
+    pick: (key, value) => { // Pick a portion of data
+      if (typeof value === "string" || key === "images") return undefined;
+      return value;
+    },
+    cacheTimeout: 5000, // Timeout to auto-clear cache, 0 if you don't want to auto-clear cache
+    isDebuggerActivated: true, // -> Take a look to the inspector console 
+  });
+
+  useEffect(() => {
+    console.log(data, error, loading);
+  }, [data, error, loading]);
+
+  return (
+    <>
+      <pre>
+        <InnerComponent />
+      </pre>
+    </>
+  )
+}
+
+export default App
+```
+
+InnerComponent.js
+
+```js
+const InnerComponent = () => {
+  const [data, setDate] = useQueryContext(); // Get all available query data
+  const [products, setProducts] = useQueryContext("products"); // Get just a portion of data by name
+
+  return (
+    <pre>
+        {products && JSON.stringify(products, null, 2)}
+        {products && JSON.stringify(products, null, 2)}
+    </pre>
+  )
+}
+
+export default InnerComponent;
+```

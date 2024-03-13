@@ -2,7 +2,7 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App.jsx'
 
-import { QueryProvider } from "../../"
+import { QueryProvider } from "./hooks"
 
 import './index.css'
 

@@ -1,11 +1,11 @@
 {
   "name": "@aredant/use-query-manager",
-  "version": "1.0.8",                     
+  "version": "1.1.2",                     
   "type": "module",
-  "source": "src/index.js",
+  "source": "src/index.jsx",
   "exports": {
-    "require": "./dist/index.cjs",
-    "default": "./dist/index.modern.js"
+    "require": "./dist/index.jsx",
+    "default": "./dist/index.modern.jsx"
   },
   "main": "./dist/index.cjs",
   "module": "./dist/index.module.js",

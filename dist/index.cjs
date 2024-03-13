@@ -28,8 +28,10 @@ function _catch(body, recover) {
   return result;
 }
 var DEFAULT_OPTIONS = {
+  name: undefined,
   selector: undefined,
-  manipulate: undefined,
+  transform: undefined,
+  pick: undefined,
   method: "GET",
   headers: undefined,
   body: undefined,
@@ -88,6 +90,9 @@ var validateOptions = function validateOptions(options) {
   if (options.selector !== undefined && typeof options.selector !== "string") {
     logDebugger("Validation error for `options.selector`", isDebuggerActivated, true, new Error("Selector must be a string. It should contains key value to select from result object."));
     return false;
+  } else if (options.name !== undefined && typeof options.name !== "string") {
+    logDebugger("Validation error for `options.name`", isDebuggerActivated, true, new Error("Name must be a string. It should contains data name to retrieve it from state."));
+    return false;
   } else if (options.method !== undefined && (typeof options.method !== "string" || ["GET", "POST", "PUT", "PATCH", "DELETE"].indexOf(options.method.toUpperCase()) === -1)) {
     logDebugger("Validation error for `options.method`", isDebuggerActivated, true, new Error('Method must be a string. It should be one of "GET", "POST", "PUT", "PATCH", "DELETE".'));
     return false;
@@ -97,8 +102,11 @@ var validateOptions = function validateOptions(options) {
   } else if (options.isDebuggerActivated !== undefined && typeof options.isDebuggerActivated !== "boolean" && Array.isArray(options.headers)) {
     logDebugger("Validation error for `options.isDebuggerActivated`", true, true, new Error("isDebuggerActivated must be a boolean. It should be activated if you need to debug all process."));
     return false;
-  } else if (options.manipulate !== undefined && typeof options.manipulate !== "function") {
-    logDebugger("Validation error for `options.manipulate`", true, true, new Error("manipulate must be a function. It rappresent the funcion to manipulate data before saving on state."));
+  } else if (options.transform !== undefined && typeof options.transform !== "function") {
+    logDebugger("Validation error for `options.transform`", true, true, new Error("transform must be a function. It rappresent the function to transform data before saving on state."));
+    return false;
+  } else if (options.pick !== undefined && typeof options.pick !== "function" && !Array.isArray(options.pick)) {
+    logDebugger("Validation error for `options.pick`", true, true, new Error("pick must be a function or an array. It rappresent the function or the array to pick just a portion of data."));
     return false;
   } else if (options.cacheTimeout !== undefined && typeof options.cacheTimeout !== "number") {
     logDebugger("Validation error for `options.cacheTimeout`", true, true, new Error("cacheTimeout must be a number. It rappresent the timeout to remove cached data from memory in milliseconds."));
@@ -136,16 +144,33 @@ var QueryProvider = function QueryProvider(_ref) {
     children: children
   });
 };
-var useQueryContext = function useQueryContext() {
-  return react.useContext(QueryContext);
+var useQueryContext = function useQueryContext(name) {
+  if (name === void 0) {
+    name = undefined;
+  }
+  var _useContext = react.useContext(QueryContext),
+    data = _useContext[0],
+    setData = _useContext[1];
+  if (name) {
+    return [data[name], function (value) {
+      return setData(function (prev) {
+        var _extends2;
+        return _extends({}, prev, (_extends2 = {}, _extends2[name] = value, _extends2));
+      });
+    }];
+  } else {
+    return [data, setData];
+  }
 };
 
 /**
  * Use query hook that manage requests, cache and other features.
  * @param {string} url 
  * @param {object} options
+ * @param {string} [options.name] Name must be a string. It should contains data state name.
  * @param {string} [options.selector] Selector must be a string. It should contains key value to select from result object.
- * @param {function} [options.manipulate] manipulate must be a function. It rappresent the funcion to manipulate data before saving on state. If you need to mutate data, use `mutate` function instead
+ * @param {string} [options.pick] Pick must be a function or an array of string. It rappresent the function or the array to pick just a portion of data.
+ * @param {function} [options.transform] Transform must be a function. It rappresent the funcion to transform data before saving on state. If you need to mutate data, use `mutate` function instead
  * @param {string} [options.method] Method must be a string. It should be one of "GET", "POST", "PUT", "PATCH", "DELETE".
  * @param {object} [options.headers] Headers must be an object. It should contains request headers key value.
  * @param {*} [options.body]
@@ -158,15 +183,17 @@ var useQuery = function useQuery(url, options) {
     options = _extends({}, DEFAULT_OPTIONS);
   }
   var _DEFAULT_OPTIONS$opti = _extends({}, DEFAULT_OPTIONS, options),
+    name = _DEFAULT_OPTIONS$opti.name,
     selector = _DEFAULT_OPTIONS$opti.selector,
-    manipulate = _DEFAULT_OPTIONS$opti.manipulate,
+    pick = _DEFAULT_OPTIONS$opti.pick,
+    transform = _DEFAULT_OPTIONS$opti.transform,
     method = _DEFAULT_OPTIONS$opti.method,
     headers = _DEFAULT_OPTIONS$opti.headers,
     body = _DEFAULT_OPTIONS$opti.body,
     isDebuggerActivated = _DEFAULT_OPTIONS$opti.isDebuggerActivated;
   validateOptions(_extends({}, DEFAULT_OPTIONS, options));
   var cache = react.useRef({});
-  var _useQueryContext = useQueryContext(),
+  var _useQueryContext = useQueryContext(name),
     data = _useQueryContext[0],
     setData = _useQueryContext[1];
   var _useState2 = react.useState(null),
@@ -182,7 +209,8 @@ var useQuery = function useQuery(url, options) {
       if (!loading) setLoading(true);
       if (cache.current[url]) {
         logDebugger("Get data from cache, no need a new request", isDebuggerActivated);
-        if (typeof manipulate === "function") logDebugger("Manipulate data before saving", isDebuggerActivated);
+        if (typeof transform === "function") logDebugger("transform data before saving", isDebuggerActivated);
+        if (typeof pick === "function" || Array.isArray(pick)) logDebugger("pick data before saving", isDebuggerActivated);
         setData(cache.current[url]);
         timeoutCacheClear(options, cache);
         setLoading(false);
@@ -199,10 +227,15 @@ var useQuery = function useQuery(url, options) {
             return Promise.resolve(response.json()).then(function (result) {
               if (response.ok) {
                 var _result = selector ? result[selector] : result;
-                if (typeof manipulate === "function") logDebugger("Manipulate data before saving", isDebuggerActivated);
-                setData(typeof manipulate === "function" ? manipulate(_result) : _result);
+                if (typeof transform === "function") logDebugger("transform data before saving", isDebuggerActivated);
+                var _transformedData = typeof transform === "function" ? transform(_result) : _result;
+                if (typeof pick === "function" || Array.isArray(pick)) {
+                  logDebugger("pick data before saving", isDebuggerActivated);
+                  _transformedData = JSON.parse(JSON.stringify(_transformedData, pick));
+                }
+                setData(_transformedData);
                 logDebugger("Request done", isDebuggerActivated);
-                cache.current[url] = typeof manipulate === "function" ? manipulate(_result) : _result;
+                cache.current[url] = _transformedData;
                 timeoutCacheClear(options, cache);
                 logDebugger("New data saved on cache for: \"" + url + "\"", isDebuggerActivated);
               } else {
@@ -233,7 +266,7 @@ var useQuery = function useQuery(url, options) {
     data: data,
     error: error,
     loading: loading,
-    updateData: setData,
+    mutate: setData,
     refresh: fetchData,
     cache: {
       get: function get(url) {
