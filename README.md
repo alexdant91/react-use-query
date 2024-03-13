@@ -159,13 +159,15 @@ export default App
 InnerComponent.js
 
 ```js
+import {useQueryContext} from '@aredant/use-query-manager'
+
 const InnerComponent = () => {
   const [data, setDate] = useQueryContext(); // Get all available query data
   const [products, setProducts] = useQueryContext("products"); // Get just a portion of data by name
 
   return (
     <pre>
-        {products && JSON.stringify(products, null, 2)}
+        {data && JSON.stringify(data, null, 2)}
         {products && JSON.stringify(products, null, 2)}
     </pre>
   )
