@@ -1,4 +1,4 @@
-import { useState, useContext, useRef, useEffect, createContext } from 'react';
+import { useState, useContext, useRef, useEffect, useCallback, createContext } from 'react';
 import { jsx } from 'react/jsx-runtime';
 
 function _extends() {
@@ -219,5 +219,117 @@ const useQuery = (url, options = _extends({}, DEFAULT_OPTIONS)) => {
   };
 };
 
-export { QueryProvider, useQuery, useQueryContext };
+/**
+ * Use query hook that manage requests, cache and other features with an event like "click"
+ * @param {string} url 
+ * @param {object} options
+ * @param {string} [options.name] Name must be a string. It should contains data state name.
+ * @param {string} [options.selector] Selector must be a string. It should contains key value to select from result object.
+ * @param {string} [options.pick] Pick must be a function or an array of string. It rappresent the function or the array to pick just a portion of data.
+ * @param {function} [options.transform] Transform must be a function. It rappresent the funcion to transform data before saving on state. If you need to mutate data, use `mutate` function instead
+ * @param {string} [options.method] Method must be a string. It should be one of "GET", "POST", "PUT", "PATCH", "DELETE".
+ * @param {object} [options.headers] Headers must be an object. It should contains request headers key value.
+ * @param {*} [options.body]
+ * @param {boolean} [options.isDebuggerActivated] isDebuggerActivated must be a boolean. It should be activated if you need to debug all process.
+ * @param {number} [options.cacheTimeout] cacheTimeout must be a number. It rappresent the timeout to remove cached data from memory in milliseconds.
+ * @returns {QueryEventResult}
+ */
+const useQueryEvent = (url, options = _extends({}, DEFAULT_OPTIONS)) => {
+  const [isSending, setIsSending] = useState(false);
+  const {
+    name,
+    selector,
+    pick,
+    transform,
+    method,
+    headers,
+    body,
+    isDebuggerActivated
+  } = _extends({}, DEFAULT_OPTIONS, options);
+  validateOptions(_extends({}, DEFAULT_OPTIONS, options));
+  const cache = useRef({});
+  const [data, setData] = useQueryContext(name);
+  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const fetchData = async () => {
+    logDebugger("Fetching data...", isDebuggerActivated);
+    if (error) setError(null);
+    if (!loading) setLoading(true);
+    if (cache.current[url]) {
+      logDebugger("Get data from cache, no need a new request", isDebuggerActivated);
+      if (typeof transform === "function") logDebugger("transform data before saving", isDebuggerActivated);
+      if (typeof pick === "function" || Array.isArray(pick)) logDebugger("pick data before saving", isDebuggerActivated);
+      setData(cache.current[url]);
+      timeoutCacheClear(options, cache);
+      setLoading(false);
+      return;
+    }
+    try {
+      logDebugger("No data found in cache, proceed to do a new request...", isDebuggerActivated);
+      const response = await fetch(url, {
+        method,
+        headers,
+        data: body
+      });
+      const result = await response.json();
+      if (response.ok) {
+        const _result = selector ? result[selector] : result;
+        if (typeof transform === "function") logDebugger("transform data before saving", isDebuggerActivated);
+        let _transformedData = typeof transform === "function" ? transform(_result) : _result;
+        if (typeof pick === "function" || Array.isArray(pick)) {
+          logDebugger("pick data before saving", isDebuggerActivated);
+          _transformedData = JSON.parse(JSON.stringify(_transformedData, pick));
+        }
+        setData(_transformedData);
+        logDebugger("Request done", isDebuggerActivated);
+        cache.current[url] = _transformedData;
+        timeoutCacheClear(options, cache);
+        logDebugger(`New data saved on cache for: "${url}"`, isDebuggerActivated);
+      } else {
+        setError(result);
+        logDebugger("An error occurred", isDebuggerActivated, true, result);
+      }
+    } catch (err) {
+      setError(err);
+      logDebugger("An error occurred", isDebuggerActivated, true, err);
+    } finally {
+      setLoading(false);
+      logDebugger("Data seatled, process done", isDebuggerActivated);
+    }
+  };
+  const sendRequest = useCallback(async () => {
+    // don't send again while we are sending
+    if (isSending) return;
+    // update state
+    setIsSending(true);
+    // send the actual request
+    await fetchData();
+    // once the request is sent, update state again
+    setIsSending(false);
+  }, [isSending, url]); // update the callback if the state changes
+
+  return {
+    sendRequest,
+    isSending,
+    data,
+    error,
+    loading,
+    mutate: setData,
+    refresh: fetchData,
+    cache: {
+      get: url => {
+        return url ? cache.current[url] : cache.current;
+      },
+      has: url => {
+        return cache.current[url];
+      },
+      clear: () => {
+        cache.current = {};
+        logDebugger(`Cache cleared`, isDebuggerActivated);
+      }
+    }
+  };
+};
+
+export { QueryProvider, useQuery, useQueryContext, useQueryEvent };
 //# sourceMappingURL=index.modern.jsx.map

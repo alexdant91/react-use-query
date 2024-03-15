@@ -283,7 +283,146 @@ var useQuery = function useQuery(url, options) {
   };
 };
 
+/**
+ * Use query hook that manage requests, cache and other features with an event like "click"
+ * @param {string} url 
+ * @param {object} options
+ * @param {string} [options.name] Name must be a string. It should contains data state name.
+ * @param {string} [options.selector] Selector must be a string. It should contains key value to select from result object.
+ * @param {string} [options.pick] Pick must be a function or an array of string. It rappresent the function or the array to pick just a portion of data.
+ * @param {function} [options.transform] Transform must be a function. It rappresent the funcion to transform data before saving on state. If you need to mutate data, use `mutate` function instead
+ * @param {string} [options.method] Method must be a string. It should be one of "GET", "POST", "PUT", "PATCH", "DELETE".
+ * @param {object} [options.headers] Headers must be an object. It should contains request headers key value.
+ * @param {*} [options.body]
+ * @param {boolean} [options.isDebuggerActivated] isDebuggerActivated must be a boolean. It should be activated if you need to debug all process.
+ * @param {number} [options.cacheTimeout] cacheTimeout must be a number. It rappresent the timeout to remove cached data from memory in milliseconds.
+ * @returns {QueryEventResult}
+ */
+var useQueryEvent = function useQueryEvent(url, options) {
+  if (options === void 0) {
+    options = _extends({}, DEFAULT_OPTIONS);
+  }
+  var _useState4 = react.useState(false),
+    isSending = _useState4[0],
+    setIsSending = _useState4[1];
+  var _DEFAULT_OPTIONS$opti2 = _extends({}, DEFAULT_OPTIONS, options),
+    name = _DEFAULT_OPTIONS$opti2.name,
+    selector = _DEFAULT_OPTIONS$opti2.selector,
+    pick = _DEFAULT_OPTIONS$opti2.pick,
+    transform = _DEFAULT_OPTIONS$opti2.transform,
+    method = _DEFAULT_OPTIONS$opti2.method,
+    headers = _DEFAULT_OPTIONS$opti2.headers,
+    body = _DEFAULT_OPTIONS$opti2.body,
+    isDebuggerActivated = _DEFAULT_OPTIONS$opti2.isDebuggerActivated;
+  validateOptions(_extends({}, DEFAULT_OPTIONS, options));
+  var cache = react.useRef({});
+  var _useQueryContext2 = useQueryContext(name),
+    data = _useQueryContext2[0],
+    setData = _useQueryContext2[1];
+  var _useState5 = react.useState(null),
+    error = _useState5[0],
+    setError = _useState5[1];
+  var _useState6 = react.useState(false),
+    loading = _useState6[0],
+    setLoading = _useState6[1];
+  var fetchData = function fetchData() {
+    try {
+      logDebugger("Fetching data...", isDebuggerActivated);
+      if (error) setError(null);
+      if (!loading) setLoading(true);
+      if (cache.current[url]) {
+        logDebugger("Get data from cache, no need a new request", isDebuggerActivated);
+        if (typeof transform === "function") logDebugger("transform data before saving", isDebuggerActivated);
+        if (typeof pick === "function" || Array.isArray(pick)) logDebugger("pick data before saving", isDebuggerActivated);
+        setData(cache.current[url]);
+        timeoutCacheClear(options, cache);
+        setLoading(false);
+        return Promise.resolve();
+      }
+      var _temp2 = _finallyRethrows(function () {
+        return _catch(function () {
+          logDebugger("No data found in cache, proceed to do a new request...", isDebuggerActivated);
+          return Promise.resolve(fetch(url, {
+            method: method,
+            headers: headers,
+            data: body
+          })).then(function (response) {
+            return Promise.resolve(response.json()).then(function (result) {
+              if (response.ok) {
+                var _result = selector ? result[selector] : result;
+                if (typeof transform === "function") logDebugger("transform data before saving", isDebuggerActivated);
+                var _transformedData = typeof transform === "function" ? transform(_result) : _result;
+                if (typeof pick === "function" || Array.isArray(pick)) {
+                  logDebugger("pick data before saving", isDebuggerActivated);
+                  _transformedData = JSON.parse(JSON.stringify(_transformedData, pick));
+                }
+                setData(_transformedData);
+                logDebugger("Request done", isDebuggerActivated);
+                cache.current[url] = _transformedData;
+                timeoutCacheClear(options, cache);
+                logDebugger("New data saved on cache for: \"" + url + "\"", isDebuggerActivated);
+              } else {
+                setError(result);
+                logDebugger("An error occurred", isDebuggerActivated, true, result);
+              }
+            });
+          });
+        }, function (err) {
+          setError(err);
+          logDebugger("An error occurred", isDebuggerActivated, true, err);
+        });
+      }, function (_wasThrown2, _result3) {
+        setLoading(false);
+        logDebugger("Data seatled, process done", isDebuggerActivated);
+        if (_wasThrown2) throw _result3;
+        return _result3;
+      });
+      return Promise.resolve(_temp2 && _temp2.then ? _temp2.then(function () {}) : void 0);
+    } catch (e) {
+      return Promise.reject(e);
+    }
+  };
+  var sendRequest = react.useCallback(function () {
+    try {
+      // don't send again while we are sending
+      if (isSending) return Promise.resolve();
+      // update state
+      setIsSending(true);
+      // send the actual request
+      return Promise.resolve(fetchData()).then(function () {
+        // once the request is sent, update state again
+        setIsSending(false);
+      });
+    } catch (e) {
+      return Promise.reject(e);
+    }
+  }, [isSending, url]); // update the callback if the state changes
+
+  return {
+    sendRequest: sendRequest,
+    isSending: isSending,
+    data: data,
+    error: error,
+    loading: loading,
+    mutate: setData,
+    refresh: fetchData,
+    cache: {
+      get: function get(url) {
+        return url ? cache.current[url] : cache.current;
+      },
+      has: function has(url) {
+        return cache.current[url];
+      },
+      clear: function clear() {
+        cache.current = {};
+        logDebugger("Cache cleared", isDebuggerActivated);
+      }
+    }
+  };
+};
+
 exports.QueryProvider = QueryProvider;
 exports.useQuery = useQuery;
 exports.useQueryContext = useQueryContext;
+exports.useQueryEvent = useQueryEvent;
 //# sourceMappingURL=index.cjs.map
