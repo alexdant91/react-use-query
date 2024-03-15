@@ -1,5 +1,7 @@
 # React Use Query
 
+A fast and efficient library for making requests and manage state result in a global level, that give data access from all components of any level, using in React with cache and browser event superpowers.
+
 [![npm version](https://badge.fury.io/js/@aredant%2Fuse-query-manager.svg)](https://badge.fury.io/js/@aredant%2Fuse-query-manager) [![GitHub license](https://img.shields.io/github/license/Naereen/StrapDown.js.svg)](https://github.com/alexdant91/react-use-query/tree/master/LICENSE) [![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://github.com/alexdant91/async-storage-adapter/graphs/commit-activity)
 
 New version of react use query library. Check on [npm](https://www.npmjs.com/package/@aredant/use-query-manager) and [github](https://github.com/alexdant91/react-use-query).

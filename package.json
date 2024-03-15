@@ -1,6 +1,6 @@
 {
   "name": "@aredant/use-query-manager",
-  "version": "1.2.1",                     
+  "version": "1.2.2",                     
   "type": "module",
   "source": "src/index.jsx",
   "exports": {
