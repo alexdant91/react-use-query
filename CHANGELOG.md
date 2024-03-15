@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.0] 2024-03-13
+
+Added `useQueryEvent` hook to trigger request on browser event like button `click`.
+
 ## [1.1.1] 2024-03-13
 
 Added `name` option to get granular control over state context

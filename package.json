@@ -1,6 +1,6 @@
 {
   "name": "@aredant/use-query-manager",
-  "version": "1.1.5",                     
+  "version": "1.2.0",                     
   "type": "module",
   "source": "src/index.jsx",
   "exports": {
@@ -29,5 +29,6 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/alexdant91/react-use-query.git"
-  }
+  },
+  "keywords": ["react", "hooks", "request", "cache", "fetch", "query", "state", "global", "ref", "event", "callback"]
 }
