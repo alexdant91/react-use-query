@@ -1,12 +1,12 @@
 # React Use Query
 
-A fast and efficient library for making requests and manage state result in a global level, that give data access from all components of any level, using in React with cache and browser event superpowers.
+A fast and efficient library for making requests and manage state result in a global level, that give data access from all components of any level, using in React with cache and browser event superpowers. From version 2 was itroduced a custom global state management system, check it out [here](#global-state-management).
 
 [![npm version](https://badge.fury.io/js/@aredant%2Fuse-query-manager.svg)](https://badge.fury.io/js/@aredant%2Fuse-query-manager) [![GitHub license](https://img.shields.io/github/license/Naereen/StrapDown.js.svg)](https://github.com/alexdant91/react-use-query/tree/master/LICENSE) [![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://github.com/alexdant91/async-storage-adapter/graphs/commit-activity)
 
 New version of react use query library. Check on [npm](https://www.npmjs.com/package/@aredant/use-query-manager) and [github](https://github.com/alexdant91/react-use-query).
 
-## 🎉 Version 1.2.x is live 🎉
+## 🎉 Version 2.0.x is live 🎉
 
 Check out for changes in the CHANGELOG:
 
@@ -25,7 +25,7 @@ Maintaining a project takes time. To help allocate time, you can Buy Me a Coffee
 
 Package to manage all types of queries, using `useQuery(url<String>, options<QueryOptions>)` hook, with cache control system and granular access to context state. It can be used to optimize all request process. 
 
-It is fast and don't make useless request thanks to cache control system. It can also give you access to context state everywhere in your app thanks to `useQueryContext(name)` hook and `<QueryProvider>`.
+It is fast and don't make useless request thanks to cache control system. It can also give you access to context state everywhere in your app thanks to `useQueryState(name)` hook and `<QueryProvider>`.
 
 If you need to trigger request just after an event like button `click`, in an efficient way, you should use `useQueryEvent(url<String>, options<QueryOptions>)` hook instead ([example here](#request-on-event)).
 
@@ -39,6 +39,9 @@ If you need to trigger request just after an event like button `click`, in an ef
     - 5.1. [Basic](#basic)
     - 5.2. [Pagination](#pagination)
     - 5.3. [Request on event](#request-on-event)
+    - 5.4. [Using selector](#using-selector)
+6. [Global state management](#global-state-management)
+    - 6.1. [Working with global state](#work-with-global-state)
 
 ## Install
 
@@ -199,11 +202,11 @@ export default App
 InnerComponent.js
 
 ```js
-import {useQueryContext} from '@aredant/use-query-manager'
+import {useQueryState} from '@aredant/use-query-manager'
 
 const InnerComponent = () => {
-  const [data, setDate] = useQueryContext(); // Get all available query data
-  const [products, setProducts] = useQueryContext("products"); // Get just a portion of data by name
+  const [data, setData] = useQueryState(); // Get all available query data
+  const [products, setProducts] = useQueryState("products"); // Get just a portion of data by name
 
   return (
     <pre>
@@ -339,7 +342,7 @@ App.jsx
 
 ```js
 import { useEffect, useState } from 'react';
-import { useQueryContext, useQueryEvent } from './hooks';
+import { useQueryState, useQueryEvent } from './hooks';
 
 import "./App.css";
 
@@ -389,3 +392,187 @@ export default App
 ```
 
 Of course you can use a combination of `useQuery` and `useQueryEvent` inside the same component.
+
+### Using selector
+
+main.jsx
+
+```js
+import React from 'react'
+import ReactDOM from 'react-dom/client'
+import App from './App.jsx'
+
+import { QueryProvider } from "@aredant/use-query-manager"
+
+ReactDOM.createRoot(document.getElementById('root')).render(
+  <QueryProvider>
+    <App />
+  </QueryProvider>,
+)
+```
+
+App.jsx
+
+```js
+import { useEffect } from 'react'
+import { useQuery } from '@aredant/use-query-manager'
+
+import InnerComponent from './InnerComponent'
+
+const App = () => {
+  const { data, error, loading, mutate, refresh, cache } = useQuery("https://dummyjson.com/products", {
+    name: "products", // State name to select right context
+    selector: "products", // Selector for first level request data
+    method: "GET", // Request method
+    headers: {}, // Request headers
+    body: undefined, // Request body
+    transform: (data) => { // Transform response data
+      return data.filter((item) => item.id % 2 === 0);
+    },
+    pick: (key, value) => { // Pick a portion of data
+      if (typeof value === "string" || key === "images") return undefined;
+      return value;
+    },
+    cacheTimeout: 5000, // Timeout to auto-clear cache, 0 if you don't want to auto-clear cache
+    isDebuggerActivated: true, // -> Take a look to the inspector console 
+  });
+
+  useEffect(() => {
+    console.log(data, error, loading);
+  }, [data, error, loading]);
+
+  return (
+    <>
+      <pre>
+        <InnerComponent />
+      </pre>
+    </>
+  )
+}
+
+export default App
+```
+
+InnerComponent.js
+
+```js
+import { useQuerySelector } from '@aredant/use-query-manager'
+
+const InnerComponent = () => {
+  const products = useQuerySelector((state) => state.products); // Get just a portion of data by name using query selector callback function
+
+  return (
+    <pre>
+        {products && JSON.stringify(products, null, 2)}
+    </pre>
+  )
+}
+
+export default InnerComponent;
+```
+
+## Global state management
+
+From version `2.0.0` is available a fully featured global state management system.
+
+### Work with global State
+
+First of all you need to setup a store using `createQueryStore` and all dispatchers usign `createDispatcher` and pass them to `QueryProvider` as follow:
+
+store.js
+
+```js
+import { createQueryStore } from '@aredant/use-query-manager'
+
+export default createQueryStore({
+  auth: { // !IMPORTANT Must match with dispatcher name
+    token: null,
+    user: null,
+  }
+});
+```
+
+dispatchers/authDispatcher.js
+
+```js
+import { createQueryDispatcher } from '@aredant/use-query-manager'
+
+export default createQueryDispatcher({
+  name: "auth", // !IMPORTANT Must match with store key object name
+  actions: {
+    login: (state, payload) => {
+      state.token = payload.token;
+      state.user = payload.user;
+    },
+    logout: (state) => {
+      state.token = null;
+      state.user = null;
+    }
+  }
+});
+```
+
+main.jsx
+
+```js
+import React from 'react'
+import ReactDOM from 'react-dom/client'
+import App from './App.jsx'
+
+import { QueryProvider } from '@aredant/use-query-manager'
+
+import store from './store'
+import authDispatcher from './dispatchers/authDispatcher'
+
+import './index.css'
+
+const dispatchers = [
+  authDispatcher,
+]
+
+ReactDOM.createRoot(document.getElementById('root')).render(
+  <QueryProvider store={store} dispatchers={dispatchers}>
+    <App />
+  </QueryProvider>,
+)
+```
+
+Then you can use dispatcher inside any component of your app.
+
+App.jsx
+
+```js
+import { useQueryState, useQuerySelector, useQueryDispatcher } from '@aredant/use-query-manager';
+
+import "./App.css";
+
+const App = () => {
+  const [data, setData] = useQueryState("auth");
+
+  const auth = useQuerySelector(({ auth }) => auth);
+  const { login, logout } = useQueryDispatcher("auth");
+
+  return (
+    <>
+      <div>
+        <p>Token: {auth.token}</p>
+        <p>User: {auth.user}</p>
+        <button onClick={() => login({ token: "1234abcd", user: "Alex" })}>Login</button>
+        <button onClick={() => logout()}>Logout</button>
+      </div>
+      <div className="container">
+        <pre>
+            // ====================== <br />
+            // -------- DATA -------- <br />
+            // ======================
+            <br />
+            <br />
+            {data && JSON.stringify(data, null, 2)}
+        </pre>
+      </div>
+    </>
+  )
+}
+
+export default App
+````

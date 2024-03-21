@@ -1,4 +1,4 @@
-import { useState, useContext, useRef, useEffect, useCallback, createContext } from 'react';
+import { useState, useContext, useEffect, useCallback, createContext } from 'react';
 import { jsx } from 'react/jsx-runtime';
 
 function _extends() {
@@ -49,12 +49,17 @@ function _finallyRethrows(body, finalizer) {
   }
   return finalizer(false, result);
 }
+var dispatchers = {
+  actions: {}
+};
+var cache = {
+  current: {}
+};
 var cacheTimeout = null;
-
 /**
- * @param {string} [message=""] 
+ * @param {string} [message=""]
  * @param {boolean} [isDebuggerActivated=false]
- * @param {boolean} [isError=false] 
+ * @param {boolean} [isError=false]
  * @param {null|string|Error} [error=null]
  */
 var logDebugger = function logDebugger(message, isDebuggerActivated, isError, error) {
@@ -76,9 +81,8 @@ var logDebugger = function logDebugger(message, isDebuggerActivated, isError, er
     if (isDebuggerActivated) console.log("[USE_QUERY]: " + message + " - " + new Date().toLocaleTimeString());
   }
 };
-
 /**
- * @param {DefaultUseQueryOptions} options 
+ * @param {DefaultUseQueryOptions} options
  * @returns {boolean}
  */
 var validateOptions = function validateOptions(options) {
@@ -88,16 +92,16 @@ var validateOptions = function validateOptions(options) {
     return !keys.includes(item);
   });
   if (options.selector !== undefined && typeof options.selector !== "string") {
-    logDebugger("Validation error for `options.selector`", isDebuggerActivated, true, new Error("Selector must be a string. It should contains key value to select from result object."));
+    logDebugger("Validation error for `options.selector`", options.isDebuggerActivated, true, new Error("Selector must be a string. It should contains key value to select from result object."));
     return false;
   } else if (options.name !== undefined && typeof options.name !== "string") {
-    logDebugger("Validation error for `options.name`", isDebuggerActivated, true, new Error("Name must be a string. It should contains data name to retrieve it from state."));
+    logDebugger("Validation error for `options.name`", options.isDebuggerActivated, true, new Error("Name must be a string. It should contains data name to retrieve it from state."));
     return false;
   } else if (options.method !== undefined && (typeof options.method !== "string" || ["GET", "POST", "PUT", "PATCH", "DELETE"].indexOf(options.method.toUpperCase()) === -1)) {
-    logDebugger("Validation error for `options.method`", isDebuggerActivated, true, new Error('Method must be a string. It should be one of "GET", "POST", "PUT", "PATCH", "DELETE".'));
+    logDebugger("Validation error for `options.method`", options.isDebuggerActivated, true, new Error('Method must be a string. It should be one of "GET", "POST", "PUT", "PATCH", "DELETE".'));
     return false;
   } else if (options.headers !== undefined && typeof options.headers !== "object" && Array.isArray(options.headers)) {
-    logDebugger("Validation error for `options.headers`", isDebuggerActivated, true, new Error("Headers must be an object. It should contains request headers key value."));
+    logDebugger("Validation error for `options.headers`", options.isDebuggerActivated, true, new Error("Headers must be an object. It should contains request headers key value."));
     return false;
   } else if (options.isDebuggerActivated !== undefined && typeof options.isDebuggerActivated !== "boolean" && Array.isArray(options.headers)) {
     logDebugger("Validation error for `options.isDebuggerActivated`", true, true, new Error("isDebuggerActivated must be a boolean. It should be activated if you need to debug all process."));
@@ -118,54 +122,151 @@ var validateOptions = function validateOptions(options) {
   }
   return true;
 };
-
 /**
- * @param {DefaultUseQueryOptions} options 
- * @param {MutableRefObject} cache 
+ * @param {DefaultUseQueryOptions} options
+ * @param {MutableRefObject} cache
  */
 var timeoutCacheClear = function timeoutCacheClear(options, cache) {
   if (options.cacheTimeout && options.cacheTimeout > 0) {
     logDebugger("Cache clear timeout start: " + options.cacheTimeout / 1000 + " seconds.", options.isDebuggerActivated);
-    clearTimeout(cacheTimeout);
-    cacheTimeout = setTimeout(function () {
+    window.clearTimeout(cacheTimeout);
+    cacheTimeout = window.setTimeout(function () {
       cache.current = {};
       logDebugger("Cache cleared", options.isDebuggerActivated);
     }, options.cacheTimeout);
   }
 };
+/**
+ * Creates a store with the provided initial state.
+ * @param {object} initialState - The initial state object for the store.
+ * @returns {CreateStoreReturn} An object representing the created store.
+ */
+var createQueryStore = function createQueryStore(initialState) {
+  Object.entries(initialState).forEach(function (_ref) {
+    var key = _ref[0],
+      value = _ref[1];
+    cache.current[key] = value;
+  });
+  return {
+    __value: initialState
+  };
+};
 var QueryContext = /*#__PURE__*/createContext(null);
-var QueryProvider = function QueryProvider(_ref) {
-  var children = _ref.children;
-  var _useState = useState(null),
+var QueryProvider = function QueryProvider(_ref2) {
+  var children = _ref2.children,
+    store = _ref2.store,
+    _dispatchers = _ref2.dispatchers;
+  if (store && !store.__value) throw new Error("`store` must be a valid QueryStore data, use `createQueryStore` function to create it");
+  if (_dispatchers && !Array.isArray(_dispatchers)) {
+    throw new Error("`dispatchers` must be a valid array of dispatchers, use `createDispatcher` function to generate them");
+  } else {
+    _dispatchers.forEach(function (_ref3) {
+      var _extends2;
+      var name = _ref3.name,
+        actions = _ref3.actions;
+      dispatchers.actions = _extends({}, dispatchers.actions, (_extends2 = {}, _extends2[name] = _extends({}, dispatchers.actions[name], actions), _extends2));
+    });
+  }
+  var _useState = useState(store ? store.__value : null),
     state = _useState[0],
     setState = _useState[1];
-  return /*#__PURE__*/jsx(QueryContext.Provider, {
-    value: [state, setState],
-    children: children
-  });
+  return (
+    /*#__PURE__*/
+    // @ts-ignore
+    jsx(QueryContext.Provider, {
+      value: [state, setState],
+      children: children
+    })
+  );
 };
-var useQueryContext = function useQueryContext(name) {
-  if (name === void 0) {
-    name = undefined;
-  }
+/**
+ * Creates a dispatcher object with specified actions for managing state updates.
+ * @param {DispatcherOptions} dispatcherOptions - Options for configuring the dispatcher.
+ * @returns {DispatcherObject} An object representing the created dispatcher.
+ */
+var createQueryDispatcher = function createQueryDispatcher(dispatcherOptions) {
+  var actions = {};
+  Object.entries(dispatcherOptions.actions).forEach(function (_ref4) {
+    var actionName = _ref4[0],
+      actionFn = _ref4[1];
+    actions[actionName] = function (data, setData) {
+      return function (payload) {
+        var _data = _extends({}, data)[dispatcherOptions.name];
+        actionFn(_data, payload);
+        setData(_extends({}, data, _data));
+      };
+    };
+  });
+  return {
+    name: dispatcherOptions.name,
+    actions: actions
+  };
+};
+/**
+ * Custom hook for accessing dispatcher actions associated with a specific name.
+ * @param {string} name - The name of the dispatcher to retrieve actions for.
+ * @returns {Object} An object containing the actions associated with the specified dispatcher name.
+ */
+var useQueryDispatcher = function useQueryDispatcher(name) {
+  // @ts-ignore
   var _useContext = useContext(QueryContext),
     data = _useContext[0],
     setData = _useContext[1];
+  var actions = {};
+  Object.entries(dispatchers.actions[name]).forEach(function (_ref5) {
+    var actionName = _ref5[0],
+      actionFn = _ref5[1];
+    // @ts-ignore
+    actions[actionName] = function (payload) {
+      return actionFn(data, setData)(payload);
+    };
+  });
+  return actions;
+};
+/**
+ * Custom hook for accessing and updating query state from the QueryContext.
+ * @param {string} [name=undefined] - The name of the specific state to access within the query data.
+ * @returns {[S, Dispatch<SetStateAction<S>>]} An array containing the queried state and a function to update the state.
+ *                 If `name` is provided, it returns the specified state and a function to update that state.
+ *                 If `name` is not provided, it returns the entire query data and a function to update it.
+ */
+var useQueryState = function useQueryState(name) {
+  if (name === void 0) {
+    name = undefined;
+  }
+  // @ts-ignore
+  var _useContext2 = useContext(QueryContext),
+    data = _useContext2[0],
+    setData = _useContext2[1];
   if (name) {
     return [data ? data[name] : data, function (value) {
-      return setData(function (prev) {
-        var _extends2;
-        return _extends({}, prev, (_extends2 = {}, _extends2[name] = value, _extends2));
+      setData(function (prev) {
+        var _extends3;
+        return _extends({}, prev, (_extends3 = {}, _extends3[name] = value, _extends3));
       });
+      cache.current[name] = value;
     }];
   } else {
     return [data, setData];
   }
 };
-
+/**
+ * Custom hook for querying data from the QueryContext and applying a callback selector.
+ * @param {function} [callbackSelector] - The callback function to apply as a selector on the data.
+ * @returns {*} The result of applying the callback selector on the data from the QueryContext.
+ */
+var useQuerySelector = function useQuerySelector(callbackSelector) {
+  if (callbackSelector === void 0) {
+    callbackSelector = function callbackSelector(state) {};
+  }
+  // @ts-ignore
+  var _useContext3 = useContext(QueryContext),
+    data = _useContext3[0];
+  return callbackSelector(data);
+};
 /**
  * Use query hook that manage requests, cache and other features.
- * @param {string} url 
+ * @param {string} url
  * @param {object} options
  * @param {string} [options.name] Name must be a string. It should contains data state name.
  * @param {string} [options.selector] Selector must be a string. It should contains key value to select from result object.
@@ -192,10 +293,10 @@ var useQuery = function useQuery(url, options) {
     body = _DEFAULT_OPTIONS$opti.body,
     isDebuggerActivated = _DEFAULT_OPTIONS$opti.isDebuggerActivated;
   validateOptions(_extends({}, DEFAULT_OPTIONS, options));
-  var cache = useRef({});
-  var _useQueryContext = useQueryContext(name),
-    data = _useQueryContext[0],
-    setData = _useQueryContext[1];
+  // const cache = useRef({});
+  var _useQueryState = useQueryState(name),
+    data = _useQueryState[0],
+    setData = _useQueryState[1];
   var _useState2 = useState(null),
     error = _useState2[0],
     setError = _useState2[1];
@@ -219,10 +320,11 @@ var useQuery = function useQuery(url, options) {
       var _temp = _finallyRethrows(function () {
         return _catch(function () {
           logDebugger("No data found in cache, proceed to do a new request...", isDebuggerActivated);
+          // @ts-ignore
           return Promise.resolve(fetch(url, {
             method: method,
             headers: headers,
-            data: body
+            body: body
           })).then(function (response) {
             return Promise.resolve(response.json()).then(function (result) {
               if (response.ok) {
@@ -231,6 +333,7 @@ var useQuery = function useQuery(url, options) {
                 var _transformedData = typeof transform === "function" ? transform(_result) : _result;
                 if (typeof pick === "function" || Array.isArray(pick)) {
                   logDebugger("pick data before saving", isDebuggerActivated);
+                  // @ts-ignore
                   _transformedData = JSON.parse(JSON.stringify(_transformedData, pick));
                 }
                 setData(_transformedData);
@@ -282,10 +385,9 @@ var useQuery = function useQuery(url, options) {
     }
   };
 };
-
 /**
  * Use query hook that manage requests, cache and other features with an event like "click"
- * @param {string} url 
+ * @param {string} url
  * @param {object} options
  * @param {string} [options.name] Name must be a string. It should contains data state name.
  * @param {string} [options.selector] Selector must be a string. It should contains key value to select from result object.
@@ -315,10 +417,10 @@ var useQueryEvent = function useQueryEvent(url, options) {
     body = _DEFAULT_OPTIONS$opti2.body,
     isDebuggerActivated = _DEFAULT_OPTIONS$opti2.isDebuggerActivated;
   validateOptions(_extends({}, DEFAULT_OPTIONS, options));
-  var cache = useRef({});
-  var _useQueryContext2 = useQueryContext(name),
-    data = _useQueryContext2[0],
-    setData = _useQueryContext2[1];
+  // const cache = useRef({});
+  var _useQueryState2 = useQueryState(name),
+    data = _useQueryState2[0],
+    setData = _useQueryState2[1];
   var _useState5 = useState(null),
     error = _useState5[0],
     setError = _useState5[1];
@@ -342,6 +444,7 @@ var useQueryEvent = function useQueryEvent(url, options) {
       var _temp2 = _finallyRethrows(function () {
         return _catch(function () {
           logDebugger("No data found in cache, proceed to do a new request...", isDebuggerActivated);
+          // @ts-ignore
           return Promise.resolve(fetch(url, {
             method: method,
             headers: headers,
@@ -354,6 +457,7 @@ var useQueryEvent = function useQueryEvent(url, options) {
                 var _transformedData = typeof transform === "function" ? transform(_result) : _result;
                 if (typeof pick === "function" || Array.isArray(pick)) {
                   logDebugger("pick data before saving", isDebuggerActivated);
+                  // @ts-ignore
                   _transformedData = JSON.parse(JSON.stringify(_transformedData, pick));
                 }
                 setData(_transformedData);
@@ -397,7 +501,6 @@ var useQueryEvent = function useQueryEvent(url, options) {
       return Promise.reject(e);
     }
   }, [isSending, url]); // update the callback if the state changes
-
   return {
     sendRequest: sendRequest,
     isSending: isSending,
@@ -421,5 +524,5 @@ var useQueryEvent = function useQueryEvent(url, options) {
   };
 };
 
-export { QueryProvider, useQuery, useQueryContext, useQueryEvent };
+export { QueryProvider, createQueryDispatcher, createQueryStore, useQuery, useQueryDispatcher, useQueryEvent, useQuerySelector, useQueryState };
 //# sourceMappingURL=index.module.js.map
